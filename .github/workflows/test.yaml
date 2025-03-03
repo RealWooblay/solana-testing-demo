@@ -35,5 +35,3 @@ jobs:
     uses: solana-developers/github-workflows/.github/workflows/test.yaml@v0.2.5
     with:
       program: "solana_contracts"
-      network: "devnet"
-      deploy: false
