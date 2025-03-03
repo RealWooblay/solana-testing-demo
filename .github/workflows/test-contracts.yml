@@ -18,12 +18,19 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Solana, Anchor, and Rust
+      - name: Install Solana CLI
         run: |
           curl --proto '=https' --tlsv1.2 -sSfL https://raw.githubusercontent.com/solana-developers/solana-install/main/install.sh | bash -s - v1.18.13
           echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
+          echo 'export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"' >> $HOME/.bashrc
+          echo 'export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"' >> $HOME/.bash_profile
+          echo 'export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"' >> $HOME/.profile
+          echo 'export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"' >> $HOME/.zshrc
+          source $HOME/.bashrc
           solana --version
 
+      - name: Setup Anchor and Rust
+        run: |
           curl https://sh.rustup.rs -sSf | sh -s -- -y
           source $HOME/.cargo/env
           rustup install stable
