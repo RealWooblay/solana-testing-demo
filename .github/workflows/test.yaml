@@ -12,7 +12,16 @@ on:
         default: "transaction_example"
 
 jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Rust (Stable)
+        run: |
+          rustup update stable
+          rustup default stable
+
   test:
+    needs: setup # Ensures setup job runs first
     uses: solana-developers/github-workflows/.github/workflows/test.yaml@v0.2.5
     with:
-      program: ${{ 'solana_contracts' }}
+      program: "solana_contracts"
