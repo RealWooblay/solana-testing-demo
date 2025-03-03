@@ -20,4 +20,4 @@ jobs:
   test:
     uses: solana-developers/github-workflows/.github/workflows/test.yaml@v0.2.5
     with:
-      program: ${{ 'transaction_example' }}
+      program: ${{ 'solana_contracts' }}
