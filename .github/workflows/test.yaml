@@ -3,25 +3,37 @@ name: Anchor Tests
 on:
   push:
     branches: [main]
-
   workflow_dispatch:
     inputs:
       program:
         description: "Program to test"
         required: true
-        default: "transaction_example"
+        default: "solana_contracts"
 
 jobs:
   setup:
     runs-on: ubuntu-latest
     steps:
-      - name: Install Rust (Stable)
+      - name: Install Rust Stable
         run: |
           rustup update stable
           rustup default stable
 
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Verify Rust Version
+        run: rustc --version
+
+      - name: Remove and Regenerate Cargo.lock
+        run: |
+          rm -f Cargo.lock
+          cargo generate-lockfile
+
   test:
-    needs: setup # Ensures setup job runs first
+    needs: setup # Ensure Rust is set up first
     uses: solana-developers/github-workflows/.github/workflows/test.yaml@v0.2.5
     with:
       program: "solana_contracts"
+      network: "devnet"
+      deploy: false
