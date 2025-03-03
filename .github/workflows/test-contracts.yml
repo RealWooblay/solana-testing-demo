@@ -1,0 +1,58 @@
+name: Solana Contract Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install Solana CLI
+        run: |
+          sh -c "$(curl -sSfL https://release.anza.xyz/install)"
+          echo "$HOME/.local/share/anza/install/active_release/bin" >> $GITHUB_PATH
+          solana --version
+
+      - name: Install Rust and Dependencies
+        run: |
+          curl https://sh.rustup.rs -sSf | sh -s -- -y
+          source $HOME/.cargo/env
+          rustup install stable
+          rustup default stable
+          rustup component add rust-src
+          rustup target add bpfel-unknown-unknown
+          cargo --version
+
+      - name: Install Anchor
+        run: |
+          cargo install --git https://github.com/coral-xyz/anchor avm --locked
+          avm install latest
+          avm use latest
+          anchor --version
+
+      - name: Install Dependencies
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+      - run: yarn install
+
+      - name: Build the Smart Contracts
+        run: anchor build
+
+      - name: Start Solana Local Validator
+        run: solana-test-validator --reset &
+        timeout-minutes: 2
+
+      - name: Deploy the Smart Contracts
+        run: anchor deploy
+
+      - name: Run Tests
+        run: anchor test
