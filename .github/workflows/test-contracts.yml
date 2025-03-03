@@ -1,4 +1,4 @@
-name: Solana Contract Tests
+name: Solana Program CI/CD
 
 on:
   push:
@@ -9,53 +9,44 @@ on:
       - main
 
 jobs:
-  test:
+  test-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Install Solana CLI
-        run: |
-          curl --proto '=https' --tlsv1.2 -sSfL https://raw.githubusercontent.com/solana-developers/solana-install/main/install.sh | bash -s - v1.18.13
-          echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
-          solana --version
-
-      - name: Install Rust and Cargo Dependencies
-        run: |
-          curl https://sh.rustup.rs -sSf | sh -s -- -y
-          source $HOME/.cargo/env
-          rustup install stable
-          rustup default stable
-          rustup target add bpfel-unknown-unknown
-          rustup component add rust-src
-          cargo install --git https://github.com/anza-xyz/cargo-build-sbf.git cargo-build-sbf
-          cargo --version
-          rustc --version
-          cargo build-sbf --help
-
-      - name: Install Anchor CLI
-        run: |
-          cargo install --git https://github.com/coral-xyz/anchor avm --force --locked
-          avm install latest
-          avm use latest
-          anchor --version
-
-      - name: Install Dependencies
-        uses: actions/setup-node@v4
+      - name: Setup Solana, Anchor, and Rust
+        uses: solana-developers/github-actions/setup-all@v1
         with:
-          node-version: "18"
-      - run: yarn install
+          solana_version: "1.18.13"
+          anchor_version: "0.30.1"
+          node_version: "18"
 
-      - name: Build the Smart Contracts
-        run: anchor build
+      - name: Extract Versions
+        id: versions
+        uses: solana-developers/github-actions/extract-versions@v1
+
+      - name: Build & Verify Smart Contract
+        uses: solana-developers/github-actions/build-verified@v1
+        with:
+          program: "solana_contracts"
 
       - name: Start Solana Local Validator
         run: solana-test-validator --reset &
         timeout-minutes: 2
 
-      - name: Deploy the Smart Contracts
-        run: anchor deploy
+      - name: Deploy to Devnet
+        if: github.ref == 'refs/heads/main'
+        uses: solana-developers/github-actions/write-program-buffer@v1
+        with:
+          program-id: "G3fCSLaKAw8LQAoVoPEGzaJ7PMD33dno3TUU647qcXAc"
+          program: "solana_contracts"
+          rpc-url: ${{ secrets.DEVNET_SOLANA_DEPLOY_URL }}
+          keypair: ${{ secrets.DEVNET_DEPLOYER_KEYPAIR }}
+          priority-fee: 0
 
       - name: Run Tests
         run: anchor test
